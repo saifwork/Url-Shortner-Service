@@ -155,7 +155,7 @@ func (s *UrlShortnerService) GenerateShortURL(chatID int64, originalURL string) 
 
 	log.Println("Generated Short ID:", shortID)
 
-	shortURL := fmt.Sprintf("http://localhost:8080/%s", shortID)
+	shortURL := fmt.Sprintf("%s%s", s.Conf.ServiceHost, shortID)
 
 	// Store in DB
 	newURL := dtos.ShortenedURL{
@@ -367,7 +367,7 @@ func (s *UrlShortnerService) RedirectShortURL(c *gin.Context) {
 	// If not found in Redis, check MongoDB
 	var result dtos.ShortenedURL
 	err = s.Client.Database(s.Conf.MongoDatabase).Collection("urls").
-		FindOne(ctx, bson.M{"shortened": "http://localhost:8080/" + shortID}).
+		FindOne(ctx, bson.M{"shortened": s.Conf.ServiceHost + shortID}).
 		Decode(&result)
 
 	if err != nil {
@@ -428,7 +428,7 @@ func (s *UrlShortnerService) UpdateClickStats(shortID, country, city, device, os
 	}
 
 	// Fetch existing document to check if first click is set
-	filter := bson.M{"shortened": "http://localhost:8080/" + shortID}
+	filter := bson.M{"shortened": s.Conf.ServiceHost + shortID}
 	var result dtos.ShortenedURL
 	err := collection.FindOne(ctx, filter).Decode(&result)
 	if err == nil && result.FirstClick.IsZero() {
