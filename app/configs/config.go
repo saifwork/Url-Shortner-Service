@@ -63,7 +63,7 @@ func (c *Config) initialize(envPath string) {
 	}
 
 	c.ServiceHost = os.Getenv("SERVICE_HOST")
-	c.ServicePort = os.Getenv("SERVICE_PORT")
+	c.ServicePort = os.Getenv("PORT")
 	c.ServiceHTTPS = os.Getenv("SERVICE_HTTPS")
 
 	c.TelegramBotToken = os.Getenv("TELEGRAM_BOT_TOKEN")

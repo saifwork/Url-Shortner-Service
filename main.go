@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -40,13 +39,9 @@ func runServer() {
 	rs := redisstore.NewRedisService(config)
 
 	log.Println("Parsing environment ...")
-	host := config.ServiceHost
-	port := config.ServicePort
-	if host == "" {
-		host = "0.0.0.0"
-	}
+	port := os.Getenv("PORT") // Use Railway’s assigned port
 	if port == "" {
-		port = "8080"
+		port = "8080" // Default fallback for local testing
 	}
 
 	// Database connection
@@ -96,16 +91,16 @@ func runServer() {
 	if err == nil && isHttps == 1 {
 		crt := os.Getenv("SERVICE_CERT")
 		key := os.Getenv("SERVICE_KEY")
-		log.Printf("Starting the HTTPS server on %s:%s", host, port)
-		err := r.RunTLS(fmt.Sprintf("%s:%s", host, port), crt, key)
+		log.Printf("Starting the HTTPS server on port %s", port)
+		err := r.RunTLS(":"+port, crt, key)
 		if err != nil {
-			log.Fatalf("Error on starting the service: %v", err)
+			log.Fatalf("Error on starting the HTTPS service: %v", err)
 		}
 	} else {
-		log.Printf("Starting the HTTP server on %s:%s", host, port)
-		err := r.Run(fmt.Sprintf("%s:%s", host, port))
+		log.Printf("Starting the HTTP server on port %s", port)
+		err := r.Run(":" + port) // Only use port, no host
 		if err != nil {
-			log.Fatalf("Error on starting the service: %v", err)
+			log.Fatalf("Error on starting the HTTP service: %v", err)
 		}
 	}
 }
