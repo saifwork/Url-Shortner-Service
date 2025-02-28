@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"net/url"
+
 	"github.com/gin-gonic/gin"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/mileusna/useragent"
@@ -43,7 +45,7 @@ func NewUrlShortnerService(bot *tgbotapi.BotAPI, gin *gin.Engine, conf *configs.
 func (s *UrlShortnerService) SetupRoutes() {
 	g := s.Gin.Group("")
 
-	g.GET("/:shortID", s.RedirectShortURL) // List tracked products
+	g.GET("/s/:shortID", s.RedirectShortURL)
 
 	go s.StartConsuming()
 }
@@ -128,13 +130,30 @@ func (s *UrlShortnerService) HandleUnknownCommand(chatID int64) {
 	s.Bot.Send(tgbotapi.NewMessage(chatID, msg))
 }
 
+func isValidURL(str string) bool {
+    u, err := url.Parse(str)
+    return err == nil && u.Scheme != "" && u.Host != ""
+}
+
 func (s *UrlShortnerService) HandleShorten(chatID int64, url string) {
+	// ✅ Trim spaces to handle cases like "/shorten   "
+	url = strings.TrimSpace(url)
+
+	// ✅ Check if the URL is empty
 	if url == "" {
-		msg := tgbotapi.NewMessage(chatID, "Please provide a valid URL. Example: `/shorten https://example.com`")
+		msg := tgbotapi.NewMessage(chatID, "⚠️ Please provide a valid URL. Example: `/shorten https://example.com`")
 		s.Bot.Send(msg)
 		return
 	}
 
+	// ✅ Validate URL format
+	if !isValidURL(url) {
+		msg := tgbotapi.NewMessage(chatID, "❌ Invalid URL format. Please enter a valid URL starting with `http://` or `https://`.")
+		s.Bot.Send(msg)
+		return
+	}
+
+	// ✅ Generate short URL
 	shortURL, err := s.GenerateShortURL(chatID, url)
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ Failed to shorten URL. Please try again.")
@@ -142,6 +161,7 @@ func (s *UrlShortnerService) HandleShorten(chatID int64, url string) {
 		return
 	}
 
+	// ✅ Send response with shortened URL
 	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✅ Shortened URL: %s", shortURL))
 	s.Bot.Send(msg)
 }
