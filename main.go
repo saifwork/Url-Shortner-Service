@@ -105,6 +105,7 @@ func runServer() {
 	}
 }
 
+// restart
 func Healthcheck(c *gin.Context) {
 	version := os.Getenv("VERSION")
 	if version == "" {
